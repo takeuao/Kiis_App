@@ -11,6 +11,8 @@ def get_weather_info():
         response = requests.get(url)
         data = response.json()
 
+        print(f"APIからの返事: {data}")
+
         current = data["current_weather"]
         code = current["weathercode"]
         temp = current["temperature"]
