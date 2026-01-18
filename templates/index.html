@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>大学バス時刻表</title>
+        <style>
+            body { font-family: sans-serif; padding: 20px; background-color: #f0f8ff; }
+            h1 { color: #0056b3; text-align: center; }
+            table { width: 100%; border-collapse: collapse; background-color: white; margin-top: 10px; }
+            th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+            th { background-color: #0056b3; color: white; }
+            .note { font-size: 0.8em; color: red; display: block; }
+        </style>
+    </head>
+    <body>
+        <h1>大学バス時刻表</h1>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>時</th>
+                    <th>分</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for bus in timetable %}
+                <tr>
+                    <td>{{ bus.hour }}</td>
+                    <td>
+                        {{ bus.minute }}
+                        {% if bus.note %}
+                            <span class ="note">※{{ bus.note }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </body>
+</html>
