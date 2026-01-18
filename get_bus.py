@@ -1,8 +1,9 @@
 import requests
+import datetime
 from bs4 import BeautifulSoup
 
 
-def get_timetable():
+def get_timetable(table_index):
     #スクールバス運行表のURL
     url = "https://www.kiis.ac.jp/information/bus/"
 
@@ -16,7 +17,7 @@ def get_timetable():
     tables = soup.find_all("table")
 
     #1つ目の表を選択
-    target_table = tables[0]
+    target_table = tables[table_index]
 
     #選んだ表の中から行trを探す
     rows = target_table.find_all("tr")
@@ -64,6 +65,50 @@ def get_timetable():
 
     return timetable
 
+def get_next_bus(timetable):
+    now =datetime.datetime.now()
+
+    next_buses = []
+
+    #リストの中身を順番にチェックする
+    for bus in timetable:
+
+        #「時」という文字を取り除く
+        h = int(bus["hour"].replace("時", ""))
+
+        #分が文字の場合
+        if not bus["minute"].isdigit():
+            
+            #その時間が今の時間以降なら表示する
+            if h >= now.hour:
+                next_buses.append(bus)
+
+                #2つ先の便まで探す
+                if len(next_buses) >= 2:
+                    break
+            
+            continue
+
+        #分が数字の場合
+        m = int(bus["minute"])
+        
+        #今日の日付と合成して比較用データを作成する
+        bus_time = datetime.datetime(now.year, now.month, now.day, h, m)
+
+        if bus_time > now:
+            next_buses.append(bus)
+
+            #2つ先の便まで探す
+            if len(next_buses) >= 2:
+                break
+        
+    return next_buses
+
+#if __name__ == "__main__":
+#    result = get_timetable()
+#    print(result)
+
 if __name__ == "__main__":
-    result = get_timetable()
-    print(result)
+    timetable = get_timetable()
+    result_buses = get_next_bus(timetable)
+    print(f"次のバスは: {result_buses}")
