@@ -5,15 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kiis App</title>
     <link rel="icon" href="{{ url_for('static', filename='images/grid-1x2-fill.svg') }}" type="image/svg+xml">
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     
     <style>
+        /* === 基本スタイル === */
         body {
             background-color: #f8f9fa;
             font-family: "Helvetica Neue", Arial, sans-serif;
             transition: background-color 0.5s ease, color 0.5s ease;
         }
+
+        /* === バスカードのデザイン === */
         .bus-card {
             border: none;
             border-radius: 15px;
@@ -22,51 +26,59 @@
             margin-bottom: 20px;
             transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease;
         }
-        /* 天気エリア用のアニメーション設定 */
+
+        /* === 天気エリアのデザイン === */
         .weather-card, 
         .weather-card span {
             transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease;
         }
+
+        /* === 時刻表示のスタイル === */
         .main-time {
             font-size: 3.5rem;
             font-weight: bold;
             line-height: 1;
         }
-        /* 駅発用の色（緑系） */
-        .station-color { color: #198754; }
-        /* 大学発用の色（青系） */
-        .uni-color { color: #0d6efd; }
-        /* ダークモード用のスタイル */
+        .station-color { color: #198754; } /* 駅発: 緑 */
+        .uni-color { color: #0d6efd; }     /* 大学発: 青 */
+
+        /* === ダークモード設定 === */
         body.dark-mode {
             background-color: #121212;
             color: #e0e0e0;
         }
-        /* カードの背景を黒っぽく */
         body.dark-mode .bus-card, 
         body.dark-mode .bg-white {
             background-color: #1e1e1e !important;
             color: #e0e0e0 !important;
             border-color: #444 !important;
         }
-        /* 文字色を白く調整 */
         body.dark-mode .text-dark,
         body.dark-mode .text-muted {
             color: #b0b3b8 !important;
         }
-        /* アイコンの色調整 */
         body.dark-mode .bi-grid-1x2-fill {
-            color: #90caf9 !important; /* 薄い青 */
+            color: #0d6efd !important;
+        }
+
+        /* === アニメーション設定 === */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .spinning {
+            animation: spin 1s linear infinite;
+            display: inline-block;
         }
     </style>
 </head>
 <body>
 
 <div class="container py-4" style="max-width: 600px;">
+    
     <div class="row align-items-center mb-4">
-        <div class="col-4"></div>
-
-        <div class="col-4 text-center">
-            <h1 class="h3 m-0 fw-bold">
+        <div class="col-4"></div> <div class="col-4 text-center">
+            <h1 class="h3 m-0 fw-bold text-nowrap">
                 <i class="bi bi-grid-1x2-fill text-primary"></i> Kiis App
             </h1>
         </div>
@@ -94,7 +106,7 @@
             <i class="bi bi-bus-front"></i> スクールバス運行表
         </h2>
         
-        <a href="/" class="btn btn-outline-secondary btn-sm rounded-pill">
+        <a href="/" id="update-btn" class="btn btn-outline-secondary btn-sm rounded-pill">
             <i class="bi bi-arrow-clockwise"></i> 更新
         </a>
     </div>
@@ -106,7 +118,7 @@
         
         {% if next_station %}
             <div>
-                <div class="main-time station-color">
+                <div id="station-time" class="main-time station-color">
                     {{ next_station[0].hour.replace('時', '').zfill(2) }}:{{ next_station[0].minute }}
                 </div>
                 {% if next_station[0].note %}
@@ -133,7 +145,7 @@
         
         {% if next_uni %}
             <div>
-                <div class="main-time uni-color">
+                <div id="uni-time" class="main-time uni-color">
                     {{ next_uni[0].hour.replace('時', '').zfill(2) }}:{{ next_uni[0].minute }}
                 </div>
                 {% if next_uni[0].note %}
@@ -166,12 +178,21 @@
         <p>&copy; 2026 Kiis App</p>
     </div>
 </div>
+
 <script>
-    // テーマ切り替えの処理
+    // === 変数の定義 ===
+    // バス関連
+    const updateBtn = document.getElementById('update-btn');
+    const updateIcon = updateBtn.querySelector('i');
+    const stationTime = document.getElementById('station-time');
+    const uniTime = document.getElementById('uni-time');
+
+    // テーマ関連
     const toggleBtn = document.getElementById('themeToggle');
     const icon = toggleBtn.querySelector('i');
     const body = document.body;
-    // テーマを保存する
+
+    // === 初期設定: テーマの読み込み ===
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'dark') {
         body.classList.add('dark-mode');
@@ -179,24 +200,57 @@
         icon.classList.add('bi-sun-fill');
     }
 
+    // === イベント処理 1: バス時間の更新 ===
+    updateBtn.addEventListener('click', (e) => {
+        e.preventDefault(); // リンクの遷移を無効化
+        updateIcon.classList.add('spinning'); // アニメーション開始
+
+        fetch('/api/bus')
+            .then(response => response.json())
+            .then(data => {
+                // 太宰府駅発の更新
+                if (data.next_station && data.next_station.length > 0) {
+                    const bus = data.next_station[0];
+                    const hour = bus.hour.replace('時', '').padStart(2, '0');
+                    stationTime.innerText = `${hour}:${bus.minute}`;
+                }
+
+                // 大学発の更新
+                if (data.next_uni && data.next_uni.length > 0) {
+                    const bus = data.next_uni[0];
+                    const hour = bus.hour.replace('時', '').padStart(2, '0');
+                    uniTime.innerText = `${hour}:${bus.minute}`;
+                }
+                
+                console.log("更新しました！");
+            })
+            .catch(error => {
+                console.error('エラー:', error);
+                alert('更新に失敗しました');
+            })
+            .finally(() => {
+                // アニメーション停止（成功・失敗問わず実行）
+                updateIcon.classList.remove('spinning');
+            });
+    });
+
+    // === イベント処理 2: テーマ切り替え ===
     toggleBtn.addEventListener('click', () => {
-        // bodyに .dark-mode クラスをつけたり外したりする
         body.classList.toggle('dark-mode');
 
-        // アイコンを月(moon)と太陽(sun)で切り替える
         if (body.classList.contains('dark-mode')) {
+            // ダークモードへ
             icon.classList.remove('bi-moon-fill');
             icon.classList.add('bi-sun-fill');
-
             localStorage.setItem('theme', 'dark');
-
         } else {
+            // ライトモードへ
             icon.classList.remove('bi-sun-fill');
             icon.classList.add('bi-moon-fill');
-
             localStorage.setItem('theme', 'light');
         }
     });
 </script>
+
 </body>
 </html>

@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, jsonify
 from get_bus import get_timetable, get_next_bus
 from get_weather import get_weather_info
 
@@ -24,6 +24,23 @@ def index():
                            next_station=next_station,
                            next_uni=next_uni,
                            weather=weather)
+
+#バスのデータだけを返すAPI
+@app.route("/api/bus")
+def update_bus():
+    #太宰府駅発を計算
+    timetable_station = get_timetable(1)
+    next_station = get_next_bus(timetable_station)
+
+    #大学発を計算
+    timetable_uni = get_timetable(0)
+    next_uni = get_next_bus(timetable_uni)
+
+    #計算結果をJSON形式で返す
+    return jsonify({
+        "next_station": next_station,
+        "next_uni": next_uni
+    })
 
 #アプリを起動
 if __name__ == "__main__":
