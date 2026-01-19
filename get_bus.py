@@ -1,5 +1,5 @@
 import requests
-import datetime
+from datetime import datetime, timedelta, timezone
 from bs4 import BeautifulSoup
 
 
@@ -66,7 +66,8 @@ def get_timetable(table_index):
     return timetable
 
 def get_next_bus(timetable):
-    now =datetime.datetime.now()
+    JST = timezone(timedelta(hours=+9), "JST")
+    now =datetime.now(JST)
 
     next_buses = []
 
@@ -93,7 +94,7 @@ def get_next_bus(timetable):
         m = int(bus["minute"])
         
         #今日の日付と合成して比較用データを作成する
-        bus_time = datetime.datetime(now.year, now.month, now.day, h, m)
+        bus_time = datetime(now.year, now.month, now.day, h, m, tzinfo=JST)
 
         if bus_time > now:
             next_buses.append(bus)
