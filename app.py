@@ -5,6 +5,11 @@ from get_weather import get_weather_info
 #Flaskアプリを作成
 app = Flask(__name__)
 
+# ★ここに追加：サービスワーカーをルート階層で読み込めるようにする
+@app.route('/sw.js')
+def sw():
+    return app.send_static_file('sw.js')
+
 #トップページにアクセスされたときにこの関数を動かす
 @app.route("/")
 def index():
