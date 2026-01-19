@@ -27,3 +27,20 @@ self.addEventListener('fetch', (event) => {
             .then((response) => response || fetch(event.request))
     );
 });
+
+// 古いキャッシュを削除する
+self.addEventListener('activate', (event) => {
+    event.waitUntil(
+        caches.keys().then((cacheNames) => {
+            return Promise.all(
+                cacheNames.map((cacheName) => {
+                    // キャッシュ名が今のCACHE_NAMEと違う場合は削除する
+                    if (cacheName !== CACHE_NAME) {
+                        console.log('古いキャッシュを削除します:', cacheName);
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
+        })
+    );
+});
