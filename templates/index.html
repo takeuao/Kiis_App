@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kiis App</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/grid-1x2-fill.svg') }}" type="image/svg+xml">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     
@@ -11,6 +12,7 @@
         body {
             background-color: #f8f9fa;
             font-family: "Helvetica Neue", Arial, sans-serif;
+            transition: background-color 0.5s ease, color 0.5s ease;
         }
         .bus-card {
             border: none;
@@ -18,6 +20,12 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             background: white;
             margin-bottom: 20px;
+            transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease;
+        }
+        /* 天気エリア用のアニメーション設定 */
+        .weather-card, 
+        .weather-card span {
+            transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease;
         }
         .main-time {
             font-size: 3.5rem;
@@ -28,21 +36,51 @@
         .station-color { color: #198754; }
         /* 大学発用の色（青系） */
         .uni-color { color: #0d6efd; }
+        /* ダークモード用のスタイル */
+        body.dark-mode {
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+        /* カードの背景を黒っぽく */
+        body.dark-mode .bus-card, 
+        body.dark-mode .bg-white {
+            background-color: #1e1e1e !important;
+            color: #e0e0e0 !important;
+            border-color: #444 !important;
+        }
+        /* 文字色を白く調整 */
+        body.dark-mode .text-dark,
+        body.dark-mode .text-muted {
+            color: #b0b3b8 !important;
+        }
+        /* アイコンの色調整 */
+        body.dark-mode .bi-grid-1x2-fill {
+            color: #90caf9 !important; /* 薄い青 */
+        }
     </style>
 </head>
 <body>
 
 <div class="container py-4" style="max-width: 600px;">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h5 m-0 fw-bold"><i class="bi bi-bus-front-fill"></i> Kiis App</h1>
-        <a href="/" class="btn btn-outline-secondary btn-sm rounded-pill">
-            <i class="bi bi-arrow-clockwise"></i> 更新
-        </a>
+    <div class="row align-items-center mb-4">
+        <div class="col-4"></div>
+
+        <div class="col-4 text-center">
+            <h1 class="h3 m-0 fw-bold">
+                <i class="bi bi-grid-1x2-fill text-primary"></i> Kiis App
+            </h1>
+        </div>
+
+        <div class="col-4 text-end">
+            <button id="themeToggle" class="btn btn-link text-secondary p-0 border-0">
+                <i class="bi bi-moon-fill fs-4"></i>
+            </button>
+        </div>
     </div>
 
     {% if weather %}
     <div class="text-center mb-4">
-        <div class="d-inline-flex align-items-center bg-white px-4 py-2 rounded-pill shadow-sm border">
+        <div class="d-inline-flex align-items-center bg-white px-4 py-2 rounded-pill shadow-sm border weather-card">
             <span class="me-2 text-secondary fw-bold small">大学周辺</span>
             <span class="fs-2 me-2">{{ weather.icon }}</span>
             <span class="fw-bold fs-4 me-2 text-dark">{{ weather.temp }}<small class="fs-6">°C</small></span>
@@ -50,6 +88,16 @@
         </div>
     </div>
     {% endif %}
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h4 fw-bold m-0">
+            <i class="bi bi-bus-front"></i> スクールバス運行表
+        </h2>
+        
+        <a href="/" class="btn btn-outline-secondary btn-sm rounded-pill">
+            <i class="bi bi-arrow-clockwise"></i> 更新
+        </a>
+    </div>
 
     <div class="card bus-card p-4 text-center border-top border-4 border-success">
         <h2 class="h6 text-muted text-uppercase mb-3">
@@ -107,7 +155,7 @@
 
     <div class="d-grid gap-2 mt-4">
         <a href="https://www.kiis.ac.jp/information/bus/" target="_blank" class="btn btn-outline-secondary shadow-sm">
-            全体の時刻表を見る
+            <i class="bi bi-box-arrow-up-right"></i> 全体の時刻表を見る
         </a>
         <p class="text-center text-muted small mt-1">
             ※別タブで大学のページが開きます
@@ -118,6 +166,37 @@
         <p>&copy; 2026 Kiis App</p>
     </div>
 </div>
+<script>
+    // テーマ切り替えの処理
+    const toggleBtn = document.getElementById('themeToggle');
+    const icon = toggleBtn.querySelector('i');
+    const body = document.body;
+    // テーマを保存する
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+        body.classList.add('dark-mode');
+        icon.classList.remove('bi-moon-fill');
+        icon.classList.add('bi-sun-fill');
+    }
 
+    toggleBtn.addEventListener('click', () => {
+        // bodyに .dark-mode クラスをつけたり外したりする
+        body.classList.toggle('dark-mode');
+
+        // アイコンを月(moon)と太陽(sun)で切り替える
+        if (body.classList.contains('dark-mode')) {
+            icon.classList.remove('bi-moon-fill');
+            icon.classList.add('bi-sun-fill');
+
+            localStorage.setItem('theme', 'dark');
+
+        } else {
+            icon.classList.remove('bi-sun-fill');
+            icon.classList.add('bi-moon-fill');
+
+            localStorage.setItem('theme', 'light');
+        }
+    });
+</script>
 </body>
 </html>
